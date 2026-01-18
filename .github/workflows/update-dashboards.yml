@@ -1,0 +1,27 @@
+name: Update Dashboard JSON
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Increment news_count
+        run: |
+          COUNT=$(jq -r '.news.total.news_count' dashboard.json)
+          COUNT=$((COUNT + 1))
+          jq --arg cnt "$COUNT" '.news.total.news_count = $cnt' dashboard.json > tmp.json
+          mv tmp.json dashboard.json
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add dashboard.json
+          git commit -m "Increment news_count via GitHub Actions" || echo "No changes"
+          git push
