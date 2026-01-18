@@ -1,0 +1,38 @@
+name: Update Dashboard API
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Operation type: increment'
+        required: true
+        default: 'increment'
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Update dashboard.json
+        run: |
+          FILE="dashboard.json"
+          OP="${{ github.event.inputs.operation }}"
+          echo "Operation: $OP"
+          
+          # Convert to JSON and increment news_count if needed
+          if [ "$OP" = "increment" ]; then
+            COUNT=$(jq '.news.total.news_count | tonumber' $FILE)
+            COUNT=$((COUNT + 1))
+            jq ".news.total.news_count = \"$COUNT\"" $FILE > tmp.json && mv tmp.json $FILE
+          fi
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add dashboard.json
+          git commit -m "Update news count via GitHub Action" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
