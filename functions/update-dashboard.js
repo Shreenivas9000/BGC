@@ -1,47 +1,65 @@
-// update-dashboard.js
-const fetch = require('node-fetch');
+// functions/update-dashboard.js
+import fetch from 'node-fetch';
 
-exports.handler = async function(event, context) {
-  // Read JSON payload from POST
-  const body = JSON.parse(event.body);
+export async function handler(event, context) {
+  try {
+    const githubToken = process.env.GITHUB_TOKEN; // ✅ Set this in Netlify environment variables
+    const owner = 'Shreenivas9000';
+    const repo = 'BGC';
+    const path = 'dashboard.json';
 
-  const field = body.field;       // e.g. news.total.news_count
-  const increment = parseInt(body.increment || 1);
+    // Step 1: Get current file from GitHub
+    const getRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+      headers: {
+        'Authorization': `token ${githubToken}`,
+        'Accept': 'application/vnd.github+json',
+      },
+    });
 
-  // Update GitHub dashboard.json using GITHUB_TOKEN
-  const token = process.env.GITHUB_TOKEN;
-  const owner = 'Shreenivas9000';
-  const repo = 'BGC';
-  const path = 'dashboard.json';
+    if (!getRes.ok) {
+      return {
+        statusCode: getRes.status,
+        body: JSON.stringify({ message: 'Failed to fetch dashboard', details: await getRes.text() }),
+      };
+    }
 
-  // Step 1: Get current file SHA
-  const getFile = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' }
-  });
-  const fileData = await getFile.json();
-  const sha = fileData.sha;
+    const fileData = await getRes.json();
+    const sha = fileData.sha;
+    const content = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf-8'));
 
-  // Step 2: Update the count in JSON
-  const dashboard = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf-8'));
-  const keys = field.split('.');
-  let ref = dashboard;
-  for (let i = 0; i < keys.length - 1; i++) ref = ref[keys[i]];
-  ref[keys[keys.length - 1]] = (parseInt(ref[keys[keys.length - 1]]) + increment).toString();
+    // Step 2: Increment the news count
+    content.news.total.news_count = (parseInt(content.news.total.news_count) + 1).toString();
 
-  // Step 3: PUT update to GitHub
-  const updateResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-    method: 'PUT',
-    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' },
-    body: JSON.stringify({
-      message: `Increment ${field} via Netlify function`,
-      content: Buffer.from(JSON.stringify(dashboard)).toString('base64'),
-      sha: sha
-    })
-  });
+    // Step 3: Update GitHub
+    const updateRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${githubToken}`,
+        'Accept': 'application/vnd.github+json',
+      },
+      body: JSON.stringify({
+        message: 'Increment news count via Netlify Function',
+        content: Buffer.from(JSON.stringify(content)).toString('base64'),
+        sha: sha,
+      }),
+    });
 
-  const updated = await updateResp.json();
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ newCount: ref[keys[keys.length - 1]] })
-  };
-};
+    if (!updateRes.ok) {
+      return {
+        statusCode: updateRes.status,
+        body: JSON.stringify({ message: 'Failed to update dashboard', details: await updateRes.text() }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: 'Dashboard updated successfully', newCount: content.news.total.news_count }),
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Server error', error: err.message }),
+    };
+  }
+}
+
