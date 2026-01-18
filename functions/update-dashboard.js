@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 
 export async function handler(event, context) {
   try {
-    const githubToken = process.env.GITHUB_TOKEN; // ✅ Set this in Netlify environment variables
+    const githubToken = process.env.GITHUB_TOKEN; // ✅ Set this in Netlify environment variables add in netily
     const owner = 'Shreenivas9000';
     const repo = 'BGC';
     const path = 'dashboard.json';
