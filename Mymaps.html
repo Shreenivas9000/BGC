@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Plot Layout</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+            integrity="sha256-sA+o1Q+Ij9TP+5keOV3PDR0u0U+Zkslu+6L2ZmkM2Ew="
+            crossorigin=""
+    />
+
+    <style>
+        #map {
+          height: 90vh;
+          width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-3">
+    <h2 class="mb-3">Survey Plot Layout</h2>
+    <div id="map"></div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Leaflet JS -->
+<script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-o9N1jv+u4Go5MLr6o8aM+grl6Y6vHUG4WcN1kPQkLtY="
+        crossorigin=""
+></script>
+
+<script>
+    // --------------------------
+    // PLOTS DATA (like Flutter)
+    // --------------------------
+    const plots = [
+      {
+        lpNo: "1221",
+        status: "BOOKED",
+        points: [
+          [17.659403, 82.995215],
+          [17.659397, 82.995264],
+          [17.659046, 82.995174],
+          [17.659046, 82.995127],
+          [17.659142, 82.995126],
+          [17.659396, 82.995214]
+        ]
+      },
+      {
+        lpNo: "2419",
+        status: "AVAILABLE",
+        points: [
+          [17.659394, 82.995293],
+          [17.659373, 82.995483],
+          [17.659063, 82.995461],
+          [17.659048, 82.995366],
+          [17.659047, 82.995203]
+        ]
+      },
+      {
+        lpNo: "2420",
+        status: "SOLD",
+        points: [
+          [17.659373, 82.995483],
+          [17.659363, 82.995607],
+          [17.659347, 82.995754],
+          [17.659014, 82.995726],
+          [17.659026, 82.995624],
+          [17.659055, 82.995574],
+          [17.659063, 82.995461]
+        ]
+      }
+    ];
+
+    // --------------------------
+    // INIT MAP
+    // --------------------------
+    const map = L.map('map').setView(plots[0].points[0], 19);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // --------------------------
+    // ADD PLOTS AS POLYGONS
+    // --------------------------
+    plots.forEach(plot => {
+      let color;
+      switch(plot.status) {
+        case "BOOKED": color = "orange"; break;
+        case "SOLD": color = "red"; break;
+        default: color = "green";
+      }
+
+      const polygon = L.polygon(plot.points, {
+        color: 'black',
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 0.45
+      }).addTo(map);
+
+      // --------------------------
+      // CLICK POPUP
+      // --------------------------
+      polygon.on('click', () => {
+        const content = `
+          <b>LP No:</b> ${plot.lpNo}<br>
+          <b>Status:</b> ${plot.status}<br>
+          <b>Source:</b> Survey Data
+        `;
+        L.popup()
+         .setLatLng(plot.points[0])
+         .setContent(content)
+         .openOn(map);
+      });
+    });
+</script>
+
+</body>
+</html>
