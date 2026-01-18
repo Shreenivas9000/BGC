@@ -1,0 +1,38 @@
+{
+  "users": {
+    "admin": 5,
+    "user": 1762,
+    "reporter": 16,
+    "editor": 1
+  },
+  "news": {
+    "total": {
+      "news_count": "9516",
+      "direct_news": "262",
+      "normal_news": "8470",
+      "videonews": "2",
+      "youtubevideonews": "619"
+    },
+    "today": {
+      "news_count": "6",
+      "direct_news": "0",
+      "normal_news": "5",
+      "videonews": "0",
+      "youtubevideonews": "1"
+    },
+    "lastweek": {
+      "news_count": "395",
+      "direct_news": "9",
+      "normal_news": "331",
+      "videonews": "0",
+      "youtubevideonews": "55"
+    },
+    "lastmonth": {
+      "news_count": "2780",
+      "direct_news": "55",
+      "normal_news": "2384",
+      "videonews": "0",
+      "youtubevideonews": "341"
+    }
+  }
+}
