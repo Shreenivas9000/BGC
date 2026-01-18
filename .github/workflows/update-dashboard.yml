@@ -1,0 +1,54 @@
+name: Update Dashboard
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Operation: increment / decrement"
+        required: true
+        default: "increment"
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Read JSON
+        id: read_json
+        run: |
+          echo "Reading dashboard.json..."
+          JSON=$(cat dashboard.json)
+          echo "json=$JSON" >> $GITHUB_OUTPUT
+
+      - name: Update news_count
+        id: update_json
+        run: |
+          OPERATION="${{ github.event.inputs.operation }}"
+          echo "Operation: $OPERATION"
+
+          # Read current count
+          COUNT=$(jq -r '.news.total.news_count' dashboard.json)
+          if [ "$OPERATION" = "increment" ]; then
+            COUNT=$((COUNT + 1))
+          elif [ "$OPERATION" = "decrement" ]; then
+            COUNT=$((COUNT - 1))
+          fi
+          echo "New count: $COUNT"
+
+          # Update JSON
+          jq --arg newcount "$COUNT" '.news.total.news_count=$newcount' dashboard.json > tmp.json
+          mv tmp.json dashboard.json
+
+      - name: Commit changes
+        run: |
+          git add dashboard.json
+          git commit -m "Update news count via workflow" || echo "No changes to commit"
+          git push
