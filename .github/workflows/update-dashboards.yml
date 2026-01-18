@@ -2,26 +2,54 @@ name: Update Dashboard JSON
 
 on:
   workflow_dispatch:
+    inputs:
+      field:
+        description: "JSON field path"
+        required: true
+      increment:
+        description: "Increment value"
+        required: true
+
+permissions:
+  contents: write
 
 jobs:
-  update-dashboard:
+  update:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Increment news_count
+      - name: Update dashboard.json
         run: |
-          COUNT=$(jq -r '.news.total.news_count' dashboard.json)
-          COUNT=$((COUNT + 1))
-          jq --arg cnt "$COUNT" '.news.total.news_count = $cnt' dashboard.json > tmp.json
-          mv tmp.json dashboard.json
+          node <<'EOF'
+          const fs = require('fs');
 
-      - name: Commit and push changes
+          const field = process.env.FIELD;
+          const inc = parseInt(process.env.INC, 10);
+
+          const data = JSON.parse(fs.readFileSync('dashboard.json'));
+
+          const keys = field.split('.');
+          let obj = data;
+          for (let i = 0; i < keys.length - 1; i++) {
+            obj = obj[keys[i]];
+          }
+
+          const last = keys[keys.length - 1];
+          obj[last] = (parseInt(obj[last], 10) + inc).toString();
+
+          fs.writeFileSync('dashboard.json', JSON.stringify(data, null, 2));
+          EOF
+        env:
+          FIELD: ${{ github.event.inputs.field }}
+          INC: ${{ github.event.inputs.increment }}
+
+      - name: Commit changes
         run: |
           git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          git config user.email "github-actions@github.com"
           git add dashboard.json
-          git commit -m "Increment news_count via GitHub Actions" || echo "No changes"
+          git commit -m "Auto update dashboard"
           git push
